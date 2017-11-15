@@ -23,19 +23,13 @@ class AzureOrgProfile(models.Model):
     )
     rest_api_endpoint = models.URLField(
         max_length=255,
-        help_text=_('The REST API endpoint of the Azure Media Services account')
+        help_text=_('The REST API endpoint of the Azure Media service account')
     )
     storage_account_name = models.CharField(
         max_length=255,
-        blank=True,
-        null=True
+        help_text=_('Azure Blobs service storage account name')
     )
     storage_key = models.CharField(
         max_length=255,
-        blank=True,
-        null=True
+        help_text=_('Azure Blobs service storage account key')
     )
-
-    @property
-    def has_storage_settings(self):
-        return self.storage_account_name and self.storage_key
