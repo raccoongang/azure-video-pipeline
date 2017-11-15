@@ -7,23 +7,26 @@ import requests
 from requests import HTTPError
 
 
-class TypesLocators(object):
+class LocatorTypes(object):
     SAS = 1
     OnDemandOrigin = 2
 
 
-class PermissionsAccessPolicy(object):
+class AccessPolicyPermissions(object):
     NONE = 0
     READ = 1
     WRITE = 2
     DELETE = 3
 
 
-class MediaServicesManagementClient(object):
+class MediaServiceClient(object):
+    """
+    Client to consume Azure Media service API.
+    """
 
     def __init__(self, settings_azure):
         """
-        Create a MediaServicesManagementClient instance.
+        Create a MediaServiceClient instance.
 
         :param settings_azure: (dict) initialization parameters
         """
@@ -41,12 +44,14 @@ class MediaServicesManagementClient(object):
             'Accept-Charset': 'UTF-8',
             'x-ms-version': '2.15',
             'Host': self.host,
-            'Authorization': '{} {}'.format(self.credentials.token['token_type'],
-                                            self.credentials.token['access_token'])
+            'Authorization': '{} {}'.format(
+                self.credentials.token['token_type'],
+                self.credentials.token['access_token']
+            )
         }
 
-    def get_list_locators(self, type=TypesLocators.OnDemandOrigin):
-        url = '{}Locators?$filter=Type eq {}'.format(self.rest_api_endpoint, type)
+    def get_locators_list(self, locator_type=LocatorTypes.OnDemandOrigin):
+        url = '{}Locators?$filter=Type eq {}'.format(self.rest_api_endpoint, locator_type)
         headers = self.get_headers()
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
@@ -55,7 +60,7 @@ class MediaServicesManagementClient(object):
         else:
             response.raise_for_status()
 
-    def get_locator_for_asset(self, asset_id, type):
+    def get_asset_locator(self, asset_id, type):
         url = "{}Assets('{}')/Locators?$filter=Type eq {}".format(self.rest_api_endpoint, asset_id, type)
         headers = self.get_headers()
         response = requests.get(url, headers=headers)
@@ -65,7 +70,7 @@ class MediaServicesManagementClient(object):
         else:
             response.raise_for_status()
 
-    def get_files_for_asset(self, asset_id):
+    def get_asset_files(self, asset_id):
         url = "{}Assets('{}')/Files".format(self.rest_api_endpoint, asset_id)
         headers = self.get_headers()
         response = requests.get(url, headers=headers)
@@ -101,7 +106,7 @@ class MediaServicesManagementClient(object):
         else:
             response.raise_for_status()
 
-    def create_access_policy(self, policy_name, duration_in_minutes=120, permissions=PermissionsAccessPolicy.NONE):
+    def create_access_policy(self, policy_name, duration_in_minutes=120, permissions=AccessPolicyPermissions.NONE):
         url = "{}AccessPolicies".format(self.rest_api_endpoint)
         headers = self.get_headers()
         data = {
@@ -115,7 +120,7 @@ class MediaServicesManagementClient(object):
         else:
             response.raise_for_status()
 
-    def create_locator(self, access_policy_id, asset_id, type):
+    def create_locator(self, access_policy_id, asset_id, locator_type):
         url = "{}Locators".format(self.rest_api_endpoint)
         headers = self.get_headers()
         start_time = (datetime.utcnow() - timedelta(minutes=10)).replace(microsecond=0).isoformat()
@@ -123,7 +128,7 @@ class MediaServicesManagementClient(object):
             "AccessPolicyId": access_policy_id,
             "AssetId": asset_id,
             "StartTime": start_time,
-            "Type": type
+            "Type": locator_type
         }
         response = requests.post(url, headers=headers, json=data)
         if response.status_code == 201:
@@ -168,7 +173,7 @@ class MediaServicesManagementClient(object):
                     "MediaProcessorId": media_processor_id,
                     "TaskBody": "<?xml version=\"1.0\" encoding=\"utf-8\"?><taskBody><inputAsset>JobInputAsset(0)"
                                 "</inputAsset><outputAsset assetName=\"{}\">JobOutputAsset(0)</outputAsset></taskBody>"
-                                .format(asset_name)
+                        .format(asset_name)
                 }
             ]
         }

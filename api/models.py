@@ -4,7 +4,10 @@ from django.utils.translation import ugettext_lazy as _
 from organizations.models import Organization
 
 
-class SettingsAzureOrganization(models.Model):
+class AzureOrgProfile(models.Model):
+    """
+    Azure services API-related extensions for Organization.
+    """
     organization = models.OneToOneField(Organization)
     client_id = models.CharField(
         max_length=255,

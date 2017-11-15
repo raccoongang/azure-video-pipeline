@@ -1,10 +1,10 @@
 from django.contrib import admin
 
-from .models import SettingsAzureOrganization
+from .models import AzureOrgProfile
 
 
-class SettingsAzureOrganizationAdmin(admin.ModelAdmin):
+class AzureOrgProfileAdmin(admin.ModelAdmin):
     list_display = ('organization', )
 
 
-admin.site.register(SettingsAzureOrganization, SettingsAzureOrganizationAdmin)
+admin.site.register(AzureOrgProfile, AzureOrgProfileAdmin)

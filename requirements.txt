@@ -1,3 +1,4 @@
 Django==1.8.18
 edx-organizations==0.4.7
 msrestazure==0.4.15
+celery==3.1.18

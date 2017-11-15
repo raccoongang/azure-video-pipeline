@@ -3,15 +3,15 @@ import time
 from celery.task import task
 from celery.utils.log import get_task_logger
 
-from .media_service import MediaServicesManagementClient, PermissionsAccessPolicy, TypesLocators
+from .media_service import MediaServiceClient, AccessPolicyPermissions, LocatorTypes
 
 LOGGER = get_task_logger(__name__)
 
 
 @task()
-def monitoring_job(job_id, settings_azure):
+def encode_job_monitoring(job_id, azure_settings):
     LOGGER.info('Start monitoring_job job_id - {}'.format(job_id))
-    media_services = MediaServicesManagementClient(settings_azure)
+    media_services = MediaServiceClient(azure_settings)
 
     while True:
         job = media_services.get_job(job_id)
@@ -25,12 +25,12 @@ def monitoring_job(job_id, settings_azure):
             access_policy = media_services.create_access_policy(
                 policy_name,
                 duration_in_minutes=60 * 24 * 365 * 10,
-                permissions=PermissionsAccessPolicy.READ
+                permissions=AccessPolicyPermissions.READ
             )
             media_services.create_locator(
                 access_policy['Id'],
                 output_media_assets['Id'],
-                type=TypesLocators.OnDemandOrigin
+                locator_type=LocatorTypes.OnDemandOrigin
             )
             break
 
