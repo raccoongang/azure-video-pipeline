@@ -1,9 +1,11 @@
 from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 
 from organizations.models import Organization
 
 
+@python_2_unicode_compatible
 class AzureOrgProfile(models.Model):
     """
     Azure services API-related extensions for Organization.
@@ -33,3 +35,16 @@ class AzureOrgProfile(models.Model):
         max_length=255,
         help_text=_('Azure Blobs service storage account key')
     )
+
+    def __str__(self):
+        return "AzureProfile[ORG={}]".format(self.organization_id)
+
+    def to_dict(self):
+        return {
+            'client_id': self.client_id,
+            'secret': self.client_secret,
+            'tenant': self.tenant,
+            'rest_api_endpoint': self.rest_api_endpoint,
+            'storage_account_name': self.storage_account_name,
+            'storage_key': self.storage_key
+        }

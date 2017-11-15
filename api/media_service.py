@@ -23,17 +23,18 @@ class MediaServiceClient(object):
     """
     Client to consume Azure Media service API.
     """
+    RESOURCE = 'https://rest.media.azure.net'
 
-    def __init__(self, settings_azure):
+    def __init__(self, azure_config):
         """
         Create a MediaServiceClient instance.
 
-        :param settings_azure: (dict) initialization parameters
+        :param azure_config: (dict) initialization parameters
         """
-        self.rest_api_endpoint = settings_azure.pop('rest_api_endpoint')
+        self.rest_api_endpoint = azure_config.pop('rest_api_endpoint')
         host = re.findall('[https|http]://(\w+.+)/api/', self.rest_api_endpoint, re.M)
         self.host = host[0] if host else None
-        self.credentials = ServicePrincipalCredentials(**settings_azure)
+        self.credentials = ServicePrincipalCredentials(resource=self.RESOURCE, **azure_config)
 
     def get_headers(self):
         return {
