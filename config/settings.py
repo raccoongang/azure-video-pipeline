@@ -39,7 +39,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
 
     'organizations',
-    'api',
+    'azure_video_pipeline',
 )
 
 MIDDLEWARE_CLASSES = (

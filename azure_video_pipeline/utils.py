@@ -1,7 +1,7 @@
 from django.conf import settings
 
-from api.media_service import MediaServiceClient, LocatorTypes
-from api.models import AzureOrgProfile
+from .media_service import MediaServiceClient, LocatorTypes
+from .models import AzureOrgProfile
 
 
 def get_azure_config(organization):
@@ -28,8 +28,8 @@ def get_azure_config(organization):
     return azure_config
 
 
-def get_media_service_client(azure_config):
-    return MediaServiceClient(azure_config)
+def get_media_service_client(organization):
+    return MediaServiceClient(get_azure_config(organization))
 
 
 def get_streaming_video_list(azure_config):
