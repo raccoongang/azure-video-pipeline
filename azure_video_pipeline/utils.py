@@ -1,3 +1,6 @@
+from datetime import datetime, timedelta
+
+from azure.storage import SharedAccessPolicy, AccessPolicy
 from django.conf import settings
 
 from .media_service import MediaServiceClient, LocatorTypes
@@ -91,3 +94,16 @@ def get_captions_info_and_download_video_url(locator, files):
             download_video_url = u'/{}?'.format(filename).join(path.split('?'))
 
     return captions, download_video_url
+
+
+def get_shared_access_policy(permission, expires_in):
+    date_format = "%Y-%m-%dT%H:%M:%SZ"
+    start = datetime.utcnow() - timedelta(minutes=1)
+    expiry = start + timedelta(seconds=expires_in)
+    return SharedAccessPolicy(
+        AccessPolicy(
+            start.strftime(date_format),
+            expiry.strftime(date_format),
+            permission,
+        )
+    )
