@@ -1,10 +1,12 @@
+from django.conf import settings
 from django.conf.urls import patterns, url
+
 
 urlpatterns = patterns(
     '',
     url(
-        r'^videos/upload/(?P<asset_id>\w+)/(?P<client_video_id>\w+)/(?P<expires_in>\w+)/$',
-        'azure_video_pipeline.media_service.upload_handler',
+        r'^videos/upload_handler/{}/(?P<edx_video_id>[\w-]+)/$'.format(settings.COURSE_ID_PATTERN),
+        'azure_video_pipeline.views.upload_handler',
         name='video-upload-handler'
     ),
 )
