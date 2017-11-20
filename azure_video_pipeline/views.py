@@ -4,6 +4,7 @@ from azure.storage import CloudStorageAccount
 from courseware import courses
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
+from django.utils.translation import ugettext as _
 from django.views.decorators.http import require_http_methods
 from edxval.api import get_video_info, ValInternalError, ValVideoNotFoundError
 from opaque_keys import InvalidKeyError
@@ -29,16 +30,16 @@ def upload_handler(request, course_id, edx_video_id):
     try:
         course_key = CourseKey.from_string(course_id)
         course = courses.get_course(course_key)
-    except (InvalidKeyError, ValueError):
-        raise HttpResponseBadRequest
+    except (InvalidKeyError, ValueError) as exc:
+        return HttpResponseBadRequest(exc.message)
 
     try:
         video_info = get_video_info(edx_video_id)
-    except (ValVideoNotFoundError, ValInternalError):
-        raise HttpResponseBadRequest
+    except (ValVideoNotFoundError, ValInternalError) as exc:
+        return HttpResponseBadRequest(exc.message)
 
     if not user_has_role(request.user, CourseStaffRole(course_key)):
-        raise HttpResponseForbidden
+        return HttpResponseForbidden(_("Staff only."))
 
     filename = video_info['client_video_id']
     mime_type = mimetypes.guess_type(filename)[0]
