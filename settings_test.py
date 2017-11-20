@@ -32,3 +32,5 @@ MIDDLEWARE_CLASSES = (
 )
 
 ROOT_URLCONF = 'config.urls'
+
+COURSE_ID_PATTERN = 'test_course'
