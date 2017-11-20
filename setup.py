@@ -26,4 +26,8 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
     ],
+    install_requires=[
+        'django>=1.8,<2.0',
+        'edx-organizations'
+    ]
 )
