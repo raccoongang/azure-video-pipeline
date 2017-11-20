@@ -1,0 +1,43 @@
+# Python CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-python/ for more details
+
+version: 2
+
+jobs:
+   build:
+     docker:
+       - image: circleci/python:2.7
+     steps:
+        - checkout
+        - run: mkdir test-reports
+        - restore_cache:
+            keys:
+              - deps1-{{ .Branch }}-{{ checksum "requirements_test.txt" }}
+        - run:
+            name: Dependencies installation
+            command: |
+              python -m virtualenv venv
+              . venv/bin/activate
+              make install-test
+              make install-dev
+        - save_cache:
+            key: deps1-{{ .Branch }}-{{ checksum "requirements_test.txt" }}
+            paths:
+              - "venv"
+        - run:
+            name: Python code style check
+            command: |
+              . venv/bin/activate
+              make quality-py
+        - run:
+            name: Python unit testing
+            command: |
+              . venv/bin/activate
+              make test-py
+        - store_artifacts:
+            path: test-reports/
+            destination: tr1
+        - store_test_results:
+            path: test-reports/
+
