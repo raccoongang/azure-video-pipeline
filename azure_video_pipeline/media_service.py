@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timedelta
-
 import re
 
 from msrestazure.azure_active_directory import ServicePrincipalCredentials
@@ -24,6 +23,7 @@ class MediaServiceClient(object):
     """
     Client to consume Azure Media service API.
     """
+
     RESOURCE = 'https://rest.media.azure.net'
 
     def __init__(self, azure_config):
@@ -175,8 +175,9 @@ class MediaServiceClient(object):
                 {
                     "Configuration": "Adaptive Streaming",
                     "MediaProcessorId": media_processor_id,
-                    "TaskBody": "<?xml version=\"1.0\" encoding=\"utf-8\"?><taskBody><inputAsset>JobInputAsset(0)"
-                                "</inputAsset><outputAsset assetName=\"{}\">JobOutputAsset(0)</outputAsset></taskBody>"
+                    "TaskBody":
+                        "<?xml version=\"1.0\" encoding=\"utf-8\"?><taskBody><inputAsset>JobInputAsset(0)"
+                        "</inputAsset><outputAsset assetName=\"{}\">JobOutputAsset(0)</outputAsset></taskBody>"
                         .format(asset_name)
                 }
             ]

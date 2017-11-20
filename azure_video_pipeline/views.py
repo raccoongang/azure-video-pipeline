@@ -2,17 +2,17 @@ import mimetypes
 
 from azure.storage import CloudStorageAccount
 from courseware import courses
-from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseBadRequest, HttpResponseForbidden, JsonResponse
 from django.views.decorators.http import require_http_methods
-from edxval.api import get_video_info, ValVideoNotFoundError, ValInternalError
+from edxval.api import get_video_info, ValInternalError, ValVideoNotFoundError
 from opaque_keys import InvalidKeyError
 from opaque_keys.edx.keys import CourseKey
-
 from student.auth import user_has_role
 from student.roles import CourseStaffRole
-from .utils import get_media_service_client
+
 from .media_service import AccessPolicyPermissions, LocatorTypes
+from .utils import get_media_service_client
 
 
 @login_required

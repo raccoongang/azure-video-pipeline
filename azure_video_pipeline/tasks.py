@@ -3,7 +3,7 @@ import time
 from celery.task import task
 from celery.utils.log import get_task_logger
 
-from .media_service import MediaServiceClient, AccessPolicyPermissions, LocatorTypes
+from .media_service import AccessPolicyPermissions, LocatorTypes, MediaServiceClient
 
 LOGGER = get_task_logger(__name__)
 

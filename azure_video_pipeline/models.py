@@ -1,7 +1,6 @@
 from django.db import models
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
-
 from organizations.models import Organization
 
 
@@ -10,6 +9,7 @@ class AzureOrgProfile(models.Model):
     """
     Azure services API-related extensions for Organization.
     """
+
     organization = models.OneToOneField(Organization)
     client_id = models.CharField(
         max_length=255,
