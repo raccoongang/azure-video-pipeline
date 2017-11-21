@@ -1,6 +1,7 @@
 # CI and tests requirements
 
 azure==2.0.0
+django>=1.8,<1.9
 flake8==3.4.1
 flake8-docstrings>=1.1.0
 flake8-import-order>=0.13
