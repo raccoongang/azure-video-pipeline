@@ -1,6 +1,6 @@
 from django.conf import settings
 
-from .media_service import MediaServiceClient, LocatorTypes
+from .media_service import LocatorTypes, MediaServiceClient
 from .models import AzureOrgProfile
 
 
