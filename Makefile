@@ -18,12 +18,13 @@ install-dev: ## Install package using pip to leverage pip's cache and shorten CI
 
 install-test: ## Install dependencies required to run tests
 	@echo [re]installing python testing requirements...
-	-pip install -Ur requirements_test.txt
+	-pip install -Ur requirements-test.txt
 
 
 clean: ## Clean working directory
 	coverage erase
 	find . -name '*.pyc' -delete
+
 
 help:
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
