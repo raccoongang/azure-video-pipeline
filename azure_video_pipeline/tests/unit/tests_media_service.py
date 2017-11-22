@@ -51,6 +51,51 @@ class MediaServiceClientTests(unittest.TestCase):
         }
         self.assertEqual(headers, expected_headers)
 
+    def test_set_metadata(self):
+        media_services = self.make_one()
+        media_services.set_metadata('value_name', 'value')
+        self.assertEqual(media_services.value_name, 'value')
+
+    @mock.patch('azure_video_pipeline.media_service.MediaServiceClient.create_asset_file',
+                return_value={})
+    @mock.patch('azure_video_pipeline.media_service.MediaServiceClient.create_access_policy',
+                return_value={'Id': 'access_policy_id'})
+    @mock.patch('azure_video_pipeline.media_service.MediaServiceClient.create_locator',
+                return_value={})
+    @mock.patch('azure_video_pipeline.media_service.BlobServiceClient',
+                return_value=mock.Mock(generate_url=mock.Mock(
+                    return_value='sas_url')))
+    def test_generate_url(self, blob_service_client, create_locator, create_access_policy, create_asset_file):
+        media_services = self.make_one()
+        media_services.client_video_id = 'file_name.mp4'
+        media_services.asset = {
+            'Id': 'asset_id'
+        }
+        sas_url = media_services.generate_url(expires_in=123456789)
+
+        create_asset_file.assert_called_once_with(
+            'asset_id', 'file_name.mp4', 'video/mp4'
+        )
+        create_access_policy.assert_called_once_with(
+            u'AccessPolicy_file_name',
+            permissions=AccessPolicyPermissions.WRITE
+        )
+        create_locator.assert_called_once_with(
+            'access_policy_id',
+            'asset_id',
+            locator_type=LocatorTypes.SAS
+        )
+        blob_service_client.assert_called_once_with(
+            'storage_account_name',
+            'storage_key'
+        )
+        blob_service_client().generate_url.assert_called_once_with(
+            asset_id='asset_id',
+            blob_name='file_name.mp4',
+            expires_in=123456789
+        )
+        self.assertEqual(sas_url, 'sas_url')
+
     @mock.patch('azure_video_pipeline.media_service.MediaServiceClient.get_headers',
                 return_value={})
     @mock.patch('azure_video_pipeline.media_service.requests.get',
