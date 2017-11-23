@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime, timedelta
+import logging
 import mimetypes
-import re
+from datetime import datetime, timedelta
 
-from msrestazure.azure_active_directory import ServicePrincipalCredentials
+import re
 import requests
+from msrestazure.azure_active_directory import ServicePrincipalCredentials
 from requests import HTTPError
 
 from .blobs_service import BlobServiceClient
+
+LOGGER = logging.getLogger(__name__)
 
 
 class LocatorTypes(object):
@@ -93,8 +96,8 @@ class MediaServiceClient(object):
         else:
             response.raise_for_status()
 
-    def get_asset_locator(self, asset_id, type):
-        url = "{}Assets('{}')/Locators?$filter=Type eq {}".format(self.rest_api_endpoint, asset_id, type)
+    def get_asset_locator(self, input_asset_id, type):
+        url = "{}Assets('{}')/Locators?$filter=Type eq {}".format(self.rest_api_endpoint, input_asset_id, type)
         headers = self.get_headers()
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
@@ -103,13 +106,24 @@ class MediaServiceClient(object):
         else:
             response.raise_for_status()
 
-    def get_asset_files(self, asset_id):
-        url = "{}Assets('{}')/Files".format(self.rest_api_endpoint, asset_id)
+    def get_asset_files(self, input_asset_id):
+        url = "{}Assets('{}')/Files".format(self.rest_api_endpoint, input_asset_id)
         headers = self.get_headers()
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
             files = response.json().get('value', [])
             return files
+        else:
+            response.raise_for_status()
+
+    def get_asset_by_name(self, asset_name):
+        url = "{}Assets".format(self.rest_api_endpoint)
+        headers = self.get_headers()
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            assets = response.json().get('value', [])
+            wanted_asset = filter(lambda a: a['Name'] == asset_name, assets)
+            return wanted_asset and wanted_asset[0]
         else:
             response.raise_for_status()
 
@@ -123,7 +137,7 @@ class MediaServiceClient(object):
         else:
             response.raise_for_status()
 
-    def create_asset_file(self, asset_id, file_name, mime_type):
+    def create_asset_file(self, input_asset_id, file_name, mime_type):
         url = "{}Files".format(self.rest_api_endpoint)
         headers = self.get_headers()
         data = {
@@ -131,7 +145,7 @@ class MediaServiceClient(object):
             "IsPrimary": "false",
             "MimeType": mime_type,
             "Name": file_name,
-            "ParentAssetId": asset_id
+            "ParentAssetId": input_asset_id
         }
         response = requests.post(url, headers=headers, json=data)
         if response.status_code == 201:
@@ -153,13 +167,13 @@ class MediaServiceClient(object):
         else:
             response.raise_for_status()
 
-    def create_locator(self, access_policy_id, asset_id, locator_type):
+    def create_locator(self, access_policy_id, input_asset_id, locator_type):
         url = "{}Locators".format(self.rest_api_endpoint)
         headers = self.get_headers()
         start_time = (datetime.utcnow() - timedelta(minutes=10)).replace(microsecond=0).isoformat()
         data = {
             "AccessPolicyId": access_policy_id,
-            "AssetId": asset_id,
+            "AssetId": input_asset_id,
             "StartTime": start_time,
             "Type": locator_type
         }
@@ -183,20 +197,35 @@ class MediaServiceClient(object):
         else:
             response.raise_for_status()
 
-    def create_job(self, asset_id, media_processor_id, filename):
-        url_asset = "{}Assets('{}')".format(self.rest_api_endpoint, asset_id)
-        asset_name = '{} - Media Encoder'.format(filename)
+    def create_job(self, input_asset_id, filename, media_processor_id=None):
+        """
+        Create encode Job on Azure Media Service for input Asset video.
+
+        :param input_asset_id:  AzureMS Asset ID which contains encode target video.
+        :param filename: file name to be encoded
+        :param media_processor_id: ID of encode processor (defaults to Standard
+        ref: https://docs.microsoft.com/en-us/azure/media-services/media-services-encode-asset
+        """
+        media_processor_name = '-'
+        if media_processor_id is None:
+            media_processor_props = self.get_media_processor()
+            media_processor_id = media_processor_props[u'Id']
+            media_processor_name = media_processor_props[u'Name']
+
+        input_asset_url = "{}Assets('{}')".format(self.rest_api_endpoint, input_asset_id)
+        output_asset_name = '{} - {} - {}'.format(media_processor_name, input_asset_id, filename)
+
         url = "{}Jobs".format(self.rest_api_endpoint)
         headers = self.get_headers()
         headers.update({
             "Accept": "application/json;odata=verbose"
         })
-        data = {
-            "Name": "JobAssets-{}".format(asset_id),
+        job_config_data = {
+            "Name": "AssetEncodeJob:{}".format(input_asset_id),
             "InputMediaAssets": [
                 {
                     "__metadata": {
-                        "uri": url_asset
+                        "uri": input_asset_url
                     }
                 }
             ],
@@ -207,12 +236,12 @@ class MediaServiceClient(object):
                     "TaskBody":
                         "<?xml version=\"1.0\" encoding=\"utf-8\"?><taskBody><inputAsset>JobInputAsset(0)"
                         "</inputAsset><outputAsset assetName=\"{}\">JobOutputAsset(0)</outputAsset></taskBody>"
-                        .format(asset_name)
+                        .format(output_asset_name)
                 }
             ]
         }
 
-        response = requests.post(url, headers=headers, json=data)
+        response = requests.post(url, headers=headers, json=job_config_data)
         if response.status_code == 201:
             return response.json()
         else:
