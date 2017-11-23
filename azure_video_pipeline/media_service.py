@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timedelta
+import mimetypes
 import re
 
 from msrestazure.azure_active_directory import ServicePrincipalCredentials
 import requests
 from requests import HTTPError
+
+from .blobs_service import BlobServiceClient
 
 
 class LocatorTypes(object):
@@ -38,6 +41,8 @@ class MediaServiceClient(object):
         host = re.findall('[https|http]://(\w+.+)/api/', self.rest_api_endpoint, re.M)
         self.host = host[0] if host else None
         self.credentials = ServicePrincipalCredentials(resource=self.RESOURCE, **azure_config)
+        self.asset = {}
+        self.client_video_id = ''
 
     def get_headers(self):
         return {
@@ -53,6 +58,30 @@ class MediaServiceClient(object):
                 self.credentials.token['access_token']
             )
         }
+
+    def set_metadata(self, metadata_name, value):
+        setattr(self, metadata_name, value)
+
+    def generate_url(self, expires_in, *args, **kwargs):
+        mime_type = mimetypes.guess_type(self.client_video_id)[0]
+        self.create_asset_file(self.asset['Id'], self.client_video_id, mime_type)
+        access_policy = self.create_access_policy(
+            u'AccessPolicy_{}'.format(self.client_video_id.split('.')[0]),
+            permissions=AccessPolicyPermissions.WRITE
+        )
+        self.create_locator(
+            access_policy['Id'],
+            self.asset['Id'],
+            locator_type=LocatorTypes.SAS
+        )
+
+        blob_service = BlobServiceClient(self.storage_account_name, self.storage_key)
+        sas_url = blob_service.generate_url(
+            asset_id=self.asset['Id'],
+            blob_name=self.client_video_id,
+            expires_in=expires_in
+        )
+        return sas_url
 
     def get_locators_list(self, locator_type=LocatorTypes.OnDemandOrigin):
         url = '{}Locators?$filter=Type eq {}'.format(self.rest_api_endpoint, locator_type)
