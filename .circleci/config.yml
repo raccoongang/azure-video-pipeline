@@ -13,7 +13,7 @@ jobs:
         - run: mkdir test-reports
         - restore_cache:
             keys:
-              - deps1-{{ .Branch }}-{{ checksum "requirements_test.txt" }}
+              - deps1-{{ .Branch }}-{{ checksum "requirements-test.txt" }}
         - run:
             name: Dependencies installation
             command: |
@@ -21,8 +21,9 @@ jobs:
               . venv/bin/activate
               make install-test
               make install-dev
+              pip install codecov
         - save_cache:
-            key: deps1-{{ .Branch }}-{{ checksum "requirements_test.txt" }}
+            key: deps1-{{ .Branch }}-{{ checksum "requirements-test.txt" }}
             paths:
               - "venv"
         - run:
@@ -35,6 +36,11 @@ jobs:
             command: |
               . venv/bin/activate
               make test
+        - run:
+            name: Send coverage report
+            command: |
+              . venv/bin/activate
+              codecov --token=c8227b8a-ebe9-4afc-a1f8-a8f12e6f8c8b
         - store_artifacts:
             path: test-reports/
             destination: tr1
