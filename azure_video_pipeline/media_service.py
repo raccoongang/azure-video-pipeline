@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime, timedelta
 import logging
 import mimetypes
-from datetime import datetime, timedelta
-
 import re
-import requests
+
 from msrestazure.azure_active_directory import ServicePrincipalCredentials
+import requests
 from requests import HTTPError
 
 from .blobs_service import BlobServiceClient

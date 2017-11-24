@@ -1,6 +1,6 @@
 import logging
-
 import time
+
 from celery.task import task
 from celery.utils.log import get_task_logger
 from courseware import courses
@@ -12,7 +12,7 @@ from opaque_keys import InvalidKeyError
 from opaque_keys.edx.keys import CourseKey
 from requests import RequestException
 
-from .media_service import MediaServiceClient, AccessPolicyPermissions, LocatorTypes
+from .media_service import AccessPolicyPermissions, LocatorTypes, MediaServiceClient
 from .utils import get_azure_config
 
 LOGGER = logging.getLogger(__name__)
@@ -25,6 +25,7 @@ class JobStatus(object):
 
     ref: https://docs.microsoft.com/en-us/rest/api/media/operations/job#list_jobs
     """
+
     QUEUED = 0
     SCHEDULED = 1
     PROCESSING = 2

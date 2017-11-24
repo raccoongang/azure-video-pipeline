@@ -1,1 +1,1 @@
-import jobs
+import jobs  # noqa: F401
