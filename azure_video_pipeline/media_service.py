@@ -38,9 +38,9 @@ class MediaServiceClient(object):
 
         :param azure_config: (dict) initialization parameters
         """
-        self.rest_api_endpoint = azure_config.pop('rest_api_endpoint')
-        self.storage_account_name = azure_config.pop('storage_account_name')
-        self.storage_key = azure_config.pop('storage_key')
+        self.rest_api_endpoint = azure_config.get('rest_api_endpoint')
+        self.storage_account_name = azure_config.get('storage_account_name')
+        self.storage_key = azure_config.get('storage_key')
         host = re.findall('[https|http]://(\w+.+)/api/', self.rest_api_endpoint, re.M)
         self.host = host[0] if host else None
         self.credentials = ServicePrincipalCredentials(resource=self.RESOURCE, **azure_config)
@@ -116,21 +116,32 @@ class MediaServiceClient(object):
         else:
             response.raise_for_status()
 
-    def get_asset_by_name(self, asset_name):
-        url = "{}Assets".format(self.rest_api_endpoint)
+    def get_input_asset_by_video_id(self, video_id):
+        """
+        Fetch input Asset by Edx video ID.
+
+        :param video_id: Edx video ID
+        """
+        url = "{}Assets?$filter=Name eq 'UPLOADED::{}'".format(self.rest_api_endpoint, video_id)
         headers = self.get_headers()
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
             assets = response.json().get('value', [])
-            wanted_asset = filter(lambda a: a['Name'] == asset_name, assets)
-            return wanted_asset and wanted_asset[0]
+            return assets and assets[0]
         else:
             response.raise_for_status()
 
     def create_asset(self, asset_name):
+        """
+        Create input Asset to be processed later.
+
+        Input Asset Name format: `UPLOADED::<Edx-video-ID>`
+        :param asset_name: Edx video ID
+        """
+        input_asset_prefix = 'UPLOADED'
         url = "{}Assets".format(self.rest_api_endpoint)
         headers = self.get_headers()
-        data = {'Name': asset_name}
+        data = {'Name': '{}::{}'.format(input_asset_prefix, asset_name)}
         response = requests.post(url, headers=headers, json=data)
         if response.status_code == 201:
             return response.json()
@@ -197,23 +208,23 @@ class MediaServiceClient(object):
         else:
             response.raise_for_status()
 
-    def create_job(self, input_asset_id, filename, media_processor_id=None):
+    def create_job(self, input_asset_id, video_id, media_processor_id=None):
         """
         Create encode Job on Azure Media Service for input Asset video.
 
+        Output Asset Name format: `ENCODED::<Edx-video-ID>`
         :param input_asset_id:  AzureMS Asset ID which contains encode target video.
-        :param filename: file name to be encoded
+        :param video_id: Edx video ID
         :param media_processor_id: ID of encode processor (defaults to Standard
         ref: https://docs.microsoft.com/en-us/azure/media-services/media-services-encode-asset
         """
-        media_processor_name = '-'
+        output_asset_prefix = 'ENCODED'
         if media_processor_id is None:
             media_processor_props = self.get_media_processor()
             media_processor_id = media_processor_props[u'Id']
-            media_processor_name = media_processor_props[u'Name']
 
         input_asset_url = "{}Assets('{}')".format(self.rest_api_endpoint, input_asset_id)
-        output_asset_name = '{} - {} - {}'.format(media_processor_name, input_asset_id, filename)
+        output_asset_name = '{}::{}'.format(output_asset_prefix, video_id)
 
         url = "{}Jobs".format(self.rest_api_endpoint)
         headers = self.get_headers()
@@ -257,7 +268,7 @@ class MediaServiceClient(object):
         else:
             response.raise_for_status()
 
-    def get_output_media_assets(self, job_id):
+    def get_output_media_asset(self, job_id):
         url = "{}Jobs('{}')/OutputMediaAssets".format(self.rest_api_endpoint, job_id)
         headers = self.get_headers()
         response = requests.get(url, headers=headers)
