@@ -36,3 +36,7 @@ ROOT_URLCONF = 'config.urls'
 COURSE_ID_PATTERN = 'test_course'
 
 FEATURES = {}
+
+MOCKED_MODULES = [
+    'courseware',
+]

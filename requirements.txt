@@ -1,4 +1,4 @@
-Django==1.8.18
+Django>=1.8,<1.9
 edx-organizations==0.4.7
 msrestazure==0.4.15
 celery==3.1.18

@@ -159,7 +159,7 @@ class MediaServiceClientTests(unittest.TestCase):
         requests_post.assert_called_once_with(
             "https://rest_api_endpoint/api/Assets",
             headers={},
-            json={'Name': asset_name}
+            json={'Name': 'UPLOADED::asset_name'}
         )
         self.assertEqual(asset, {'asset_id': 'asset_id', 'asset_name': 'asset_name'})
 
