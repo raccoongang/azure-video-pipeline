@@ -4,12 +4,13 @@ import logging
 import mimetypes
 import re
 
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from msrestazure.azure_active_directory import ServicePrincipalCredentials
 import requests
 from requests import HTTPError
 
 from .blobs_service import BlobServiceClient
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -92,10 +93,20 @@ class MediaServiceClient(object):
         asset = self.get_input_asset_by_video_id(edx_video_id, asset_prefix='ENCODED')
 
         if not asset:
-            raise ObjectDoesNotExist('no asset')
+            raise ObjectDoesNotExist(
+                'Target Video to which you are trying to attach transcripts is no longer available on Azure'
+                ' or is corrupted in some way.'
+            )
 
         mime_type = mimetypes.guess_type(file_name)[0]
-        self.create_asset_file(asset['Id'], file_name, mime_type)
+
+        try:
+            self.create_asset_file(asset['Id'], file_name, mime_type)
+        except HTTPError:
+            raise MultipleObjectsReturned(
+                'This may be happening because of file name conflict. Try to change the file name and upload again.'
+            )
+
         access_policy = self.create_access_policy(
             u'AccessPolicy_{}'.format(file_name.split('.')[0]),
             duration_in_minutes=30,
