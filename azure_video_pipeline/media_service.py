@@ -101,7 +101,7 @@ class MediaServiceClient(object):
         mime_type = mimetypes.guess_type(file_name)[0]
 
         try:
-            self.create_asset_file(asset['Id'], file_name, mime_type)
+            asset_file = self.create_asset_file(asset['Id'], file_name, mime_type)
         except HTTPError:
             raise MultipleObjectsReturned(
                 'This may be happening because of file name conflict. Try to change the file name and upload again.'
@@ -126,6 +126,10 @@ class MediaServiceClient(object):
 
         self.delete_locator(locator['Id'])
         self.delete_access_policy(access_policy['Id'])
+        self.update_asset_file(asset_file['Id'], file_data={
+            "size": transcript_file._size,
+            "ctype": transcript_file.content_type
+        })
 
     def get_locators_list(self, locator_type=LocatorTypes.OnDemandOrigin):
         url = '{}Locators?$filter=Type eq {}'.format(self.rest_api_endpoint, locator_type)
@@ -203,6 +207,21 @@ class MediaServiceClient(object):
         if response.status_code == 201:
             return response.json()
         else:
+            response.raise_for_status()
+
+    def update_asset_file(self, file_id, file_data):
+        """
+        Update AssetFile with special MERGE request to set proper file size.
+        :param file_id: Azure AssetFile identifier
+        """
+        url = "{}Files('{}')".format(self.rest_api_endpoint, file_id)
+        headers = self.get_headers()
+        json_data = {
+            "ContentFileSize": "{size}".format(**file_data),
+            "MimeType": "{ctype}".format(**file_data)
+        }
+        response = requests.request('MERGE', url, headers=headers, json=json_data)
+        if not response.status_code == 204:
             response.raise_for_status()
 
     def create_access_policy(self, policy_name, duration_in_minutes=120, permissions=AccessPolicyPermissions.NONE):
