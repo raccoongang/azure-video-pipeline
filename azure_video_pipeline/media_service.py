@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 import logging
 import mimetypes
 import re
+from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpResponseNotFound
 
 from msrestazure.azure_active_directory import ServicePrincipalCredentials
 import requests
@@ -86,6 +88,35 @@ class MediaServiceClient(object):
         )
         return sas_url
 
+    def upload_video_transcript(self, edx_video_id, transcript_file):
+        file_name = transcript_file.name
+        asset = self.get_input_asset_by_video_id(edx_video_id, asset_prefix='ENCODED')
+
+        if not asset:
+            raise ObjectDoesNotExist('no asset')
+
+        mime_type = mimetypes.guess_type(file_name)[0]
+        self.create_asset_file(asset['Id'], file_name, mime_type)
+        access_policy = self.create_access_policy(
+            u'AccessPolicy_{}'.format(file_name.split('.')[0]),
+            duration_in_minutes=30,
+            permissions=AccessPolicyPermissions.WRITE
+        )
+        locator = self.create_locator(
+            access_policy['Id'],
+            asset['Id'],
+            locator_type=LocatorTypes.SAS
+        )
+        blob_service_client = BlobServiceClient(self.storage_account_name, self.storage_key)
+        blob_service_client.blob_service.put_block_blob_from_file(
+            'asset-{}'.format(asset['Id'].split(':')[-1]),
+            file_name,
+            transcript_file.file
+        )
+
+        self.delete_locator(locator['Id'])
+        self.delete_access_policy(access_policy['Id'])
+
     def get_locators_list(self, locator_type=LocatorTypes.OnDemandOrigin):
         url = '{}Locators?$filter=Type eq {}'.format(self.rest_api_endpoint, locator_type)
         headers = self.get_headers()
@@ -116,13 +147,13 @@ class MediaServiceClient(object):
         else:
             response.raise_for_status()
 
-    def get_input_asset_by_video_id(self, video_id):
+    def get_input_asset_by_video_id(self, video_id, asset_prefix='UPLOADED'):
         """
         Fetch input Asset by Edx video ID.
 
         :param video_id: Edx video ID
         """
-        url = "{}Assets?$filter=Name eq 'UPLOADED::{}'".format(self.rest_api_endpoint, video_id)
+        url = "{}Assets?$filter=Name eq '{}::{}'".format(self.rest_api_endpoint, asset_prefix, video_id)
         headers = self.get_headers()
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
@@ -178,6 +209,11 @@ class MediaServiceClient(object):
         else:
             response.raise_for_status()
 
+    def delete_access_policy(self, access_policy_id):
+        url = "{}AccessPolicies('{}')".format(self.rest_api_endpoint, access_policy_id)
+        headers = self.get_headers()
+        requests.delete(url, headers=headers)
+
     def create_locator(self, access_policy_id, input_asset_id, locator_type):
         url = "{}Locators".format(self.rest_api_endpoint)
         headers = self.get_headers()
@@ -193,6 +229,11 @@ class MediaServiceClient(object):
             return response.json()
         else:
             response.raise_for_status()
+
+    def delete_locator(self, locator_id):
+        url = "{}Locators('{}')".format(self.rest_api_endpoint, locator_id)
+        headers = self.get_headers()
+        requests.delete(url, headers=headers)
 
     def get_media_processor(self, name='Media Encoder Standard'):
         url = "{}MediaProcessors()?$filter=Name eq '{}'".format(self.rest_api_endpoint, name)
