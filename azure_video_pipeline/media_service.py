@@ -3,9 +3,8 @@ from datetime import datetime, timedelta
 import logging
 import mimetypes
 import re
-from django.core.exceptions import ObjectDoesNotExist
-from django.http import HttpResponseNotFound
 
+from django.core.exceptions import ObjectDoesNotExist
 from msrestazure.azure_active_directory import ServicePrincipalCredentials
 import requests
 from requests import HTTPError
