@@ -212,7 +212,9 @@ class MediaServiceClient(object):
     def update_asset_file(self, file_id, file_data):
         """
         Update AssetFile with special MERGE request to set proper file size.
+
         :param file_id: Azure AssetFile identifier
+        :param file_data: (dict) file info to be updated
         """
         url = "{}Files('{}')".format(self.rest_api_endpoint, file_id)
         headers = self.get_headers()
