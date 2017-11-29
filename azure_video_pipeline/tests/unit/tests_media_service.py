@@ -159,7 +159,7 @@ class MediaServiceClientTests(unittest.TestCase):
         requests_post.assert_called_once_with(
             "https://rest_api_endpoint/api/Assets",
             headers={},
-            json={'Name': asset_name}
+            json={'Name': 'UPLOADED::asset_name'}
         )
         self.assertEqual(asset, {'asset_id': 'asset_id', 'asset_name': 'asset_name'})
 
@@ -248,3 +248,20 @@ class MediaServiceClientTests(unittest.TestCase):
 
     def test_raise_for_status_create_locator(self):
         self.raise_for_status(func='create_locator', func_args=['access_policy_id', 'asset_id', 'locator_type'])
+
+    @mock.patch('azure_video_pipeline.media_service.MediaServiceClient.get_headers', return_value={})
+    @mock.patch('azure_video_pipeline.media_service.requests.get', return_value=mock.Mock(
+        status_code=200, json=mock.Mock(return_value={'value': [{'id', 'asset_id'}]})
+    ))
+    def test_get_input_asset_by_video_id(self, requests_get_mock, _get_headers_mock):
+        # arrange
+        media_services = self.make_one()
+        video_id = 'test:video:id'
+        # act
+        asset = media_services.get_input_asset_by_video_id(video_id)
+        # assert
+        requests_get_mock.assert_called_once_with(
+            "https://rest_api_endpoint/api/Assets?$filter=Name eq 'UPLOADED::test:video:id'",
+            headers={}
+        )
+        self.assertEqual(asset, {'id', 'asset_id'})
