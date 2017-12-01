@@ -314,7 +314,7 @@ class MediaServiceClient(object):
             ],
             "Tasks": [
                 {
-                    "Configuration": "Adaptive Streaming",
+                    "Configuration": "Content Adaptive Multiple Bitrate MP4",  # streaming and downloading
                     "MediaProcessorId": media_processor_id,
                     "TaskBody":
                         "<?xml version=\"1.0\" encoding=\"utf-8\"?><taskBody><inputAsset>JobInputAsset(0)"
